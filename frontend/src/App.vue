@@ -20,6 +20,8 @@
         </h1>
         <div style="color: #718096; font-size: 0.9em; margin-top: 10px;">
           📅 更新时间：{{ data.timestamp }}
+          <br />
+          使用模型：<strong>{{ data.model_used || '未知模型' }}</strong>
         </div>
         <StatsCard :platform-count="platformCount" :total-topics="totalTopics" />
       </div>
