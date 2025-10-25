@@ -6,7 +6,7 @@
     </div>
     <div v-else class="file-list">
       <button
-        v-for="file in files"
+        v-for="file in displayedFiles"
         :key="file"
         class="file-button"
         :class="{ active: file === currentFile }"
@@ -14,12 +14,24 @@
       >
         {{ file }}
       </button>
+
+      <!-- 折叠/展开按钮 -->
+      <button
+        v-if="files.length > 6"
+        class="file-button"
+        style="background: #e2e8f0; color: #2d3748;"
+        @click="toggleExpand"
+      >
+        {{ expanded ? '收起' : '展开更多' }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { ref, computed } from 'vue'
+
+const props = defineProps({
   files: {
     type: Array,
     required: true
@@ -31,6 +43,17 @@ defineProps({
 })
 
 defineEmits(['select-file'])
+
+const expanded = ref(false)
+
+const displayedFiles = computed(() => {
+  if (expanded.value) return props.files
+  return props.files.slice(0, 6)
+})
+
+const toggleExpand = () => {
+  expanded.value = !expanded.value
+}
 </script>
 
 <style scoped>
