@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_file
+from flask import Flask, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 import json
 import os
@@ -9,25 +9,39 @@ app = Flask(__name__)
 CORS(app)
 
 # 配置
-DATA_DIR = "/data"  # JSON文件所在目录
-PORT = 8080
+DATA_DIR = os.getenv("DATA_DIR", "/data")  # JSON文件所在目录
+PORT = int(os.getenv("PORT", 8080))
+FRONTEND_DIR = Path(__file__).parent / "frontend"
 
 @app.route('/')
 def index():
-    """返回主页面"""
-    html_file = Path(__file__).parent / "hot_trends_viewer.html"
-    if html_file.exists():
-        return send_file(html_file)
+    """返回 Vue 构建的 index.html"""
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return send_file(index_file)
     return """
     <!DOCTYPE html>
     <html>
-    <head><title>请先创建网页</title></head>
+    <head><title>前端未构建</title></head>
     <body>
-        <h1>请将前面生成的HTML保存为 hot_trends_viewer.html</h1>
-        <p>并放在与此脚本相同的目录下</p>
+        <h1>前端资源未找到</h1>
+        <p>请确保已构建 Vue 前端项目</p>
+        <pre>
+cd frontend
+npm install
+npm run build
+        </pre>
     </body>
     </html>
-    """
+    """, 404
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    """服务前端静态资源"""
+    assets_dir = FRONTEND_DIR / "assets"
+    if assets_dir.exists():
+        return send_from_directory(assets_dir, filename)
+    return "Asset not found", 404
 
 @app.route('/api/files')
 def get_files():
@@ -76,18 +90,29 @@ def get_latest():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/health')
+def health():
+    """健康检查端点"""
+    return jsonify({"status": "healthy"}), 200
+
 if __name__ == '__main__':
     print("=" * 60)
-    print("   热搜分析可视化服务器")
+    print("   热搜分析可视化服务器 (Vue 3 版本)")
     print("=" * 60)
     print(f"🌐 服务地址: http://localhost:{PORT}")
     print(f"📁 数据目录: {os.path.abspath(DATA_DIR)}")
+    print(f"🎨 前端目录: {FRONTEND_DIR.absolute()}")
     print("=" * 60)
     
-    # 检查是否有HTML文件
-    html_file = Path(__file__).parent / "hot_trends_viewer.html"
-    if not html_file.exists():
-        print("\n⚠️  警告：未找到 hot_trends_viewer.html")
-        print("   请将HTML文件保存到当前目录\n")
+    # 检查前端文件
+    if not FRONTEND_DIR.exists():
+        print("\n⚠️  警告：未找到前端构建目录")
+        print("   请先构建 Vue 前端项目：")
+        print("   cd frontend && npm install && npm run build\n")
+    elif not (FRONTEND_DIR / "index.html").exists():
+        print("\n⚠️  警告：前端未构建")
+        print("   请运行：cd frontend && npm run build\n")
+    else:
+        print("\n✅ 前端资源已就绪\n")
     
     app.run(host='0.0.0.0', port=PORT, debug=False)

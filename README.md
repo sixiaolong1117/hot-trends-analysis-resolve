@@ -32,6 +32,13 @@ services:
       - ./outputs:/data:ro
     environment:
       - TZ=Asia/Shanghai
+      - PORT=8080
+      - DATA_DIR=/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
   hot-trends-analysis-backend:
     image: ghcr.io/sixiaolong1117/hot-trends-analysis-backend:latest
     container_name: hot-trends-analysis-backend
@@ -44,6 +51,7 @@ services:
       - TZ=Asia/Shanghai      
       - OLLAMA_API=http://192.168.0.2:11434     
       - HOT_SEARCH_API=http://dailyhotapi:6688
+      - TOPICS_PER_PLATFORM=10
       - DEFAULT_PLATFORMS=36kr,51cto,52pojie,acfun,baidu,bilibili,coolapk,csdn,dgtle,douban-group,douban-movie,douyin,earthquake,gameres,geekpark,genshin,github,guokr,hackernews,hellogithub,history,honkai,hostloc,hupu,huxiu,ifanr,ithome-xijiayi,ithome,jianshu,juejin,kuaishou,linuxdo,lol,miyoushe,netease-news,newsmth,ngabbs,nodeseek,nytimes,producthunt,qq-news,sina-news,sina,smzdm,sspai,starrail,thepaper,tieba,toutiao,v2ex,weatheralarm,weibo,weread,yystv,zhihu-daily,zhihu
       # DEFAULT_PLATFORMS 保留你需要的，不建议太多，输入热搜条目太多太杂容易让 LLM 产生更严重的幻觉。
       # 有关所有接口名对应的网站，见：https://github.com/imsyy/DailyHotApi?tab=readme-ov-file#-%E6%8E%A5%E5%8F%A3%E6%80%BB%E8%A7%88
