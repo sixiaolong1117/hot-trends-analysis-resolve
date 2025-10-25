@@ -28,9 +28,22 @@
 
       <div class="section-card">
         <div class="section-title">📱 各平台热搜详情</div>
+        
+        <!-- 添加平台筛选标签 -->
+        <div class="platform-filter">
+          <button 
+            v-for="category in platformCategories" 
+            :key="category.name"
+            :class="['filter-btn', { active: activeCategory === category.name }]"
+            @click="activeCategory = category.name"
+          >
+            {{ category.icon }} {{ category.label }}
+          </button>
+        </div>
+
         <div class="platforms-grid">
           <PlatformCard
-            v-for="[platform, topics] in Object.entries(data.raw_data)"
+            v-for="[platform, topics] in filteredPlatforms"
             :key="platform"
             :platform="platform"
             :topics="topics"
@@ -53,6 +66,17 @@ const currentFile = ref(null)
 const data = ref(null)
 const loading = ref(true)
 const error = ref(null)
+const activeCategory = ref('all')
+
+// 平台分类
+const platformCategories = [
+  { name: 'all', label: '全部', icon: '🌐' },
+  { name: 'social', label: '社交媒体', icon: '💬', platforms: ['weibo', 'douyin', 'kuaishou'] },
+  { name: 'tech', label: '科技资讯', icon: '💻', platforms: ['github', 'v2ex', 'juejin', 'csdn', 'ithome', 'linuxdo', 'nodeseek', 'hostloc'] },
+  { name: 'news', label: '新闻媒体', icon: '📰', platforms: ['baidu', 'toutiao', 'thepaper', 'netease-news', 'qq-news', 'sina-news'] },
+  { name: 'community', label: '社区论坛', icon: '🗣️', platforms: ['zhihu', 'tieba', 'douban-group', 'newsmth', 'ngabbs', 'hupu'] },
+  { name: 'entertainment', label: '娱乐休闲', icon: '🎮', platforms: ['bilibili', 'acfun', 'douban-movie', 'genshin', 'honkai', 'starrail', 'lol', 'miyoushe'] },
+]
 
 const platformCount = computed(() => {
   return data.value ? Object.keys(data.value.raw_data).length : 0
@@ -61,6 +85,24 @@ const platformCount = computed(() => {
 const totalTopics = computed(() => {
   if (!data.value) return 0
   return Object.values(data.value.raw_data).reduce((sum, topics) => sum + topics.length, 0)
+})
+
+// 根据选中的分类过滤平台
+const filteredPlatforms = computed(() => {
+  if (!data.value) return []
+  
+  const entries = Object.entries(data.value.raw_data)
+  
+  if (activeCategory.value === 'all') {
+    return entries
+  }
+  
+  const category = platformCategories.find(c => c.name === activeCategory.value)
+  if (!category || !category.platforms) {
+    return entries
+  }
+  
+  return entries.filter(([platform]) => category.platforms.includes(platform))
 })
 
 async function loadFileList() {
@@ -105,6 +147,34 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
   margin-top: 20px;
+}
+
+.platform-filter {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.filter-btn {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background: #f7fafc;
+}
+
+.filter-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
 }
 
 @media (max-width: 768px) {
